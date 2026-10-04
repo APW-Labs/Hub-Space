@@ -29,7 +29,8 @@ import apw.android.hubspace.ui.theme.HubSpaceTheme
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun WelcomeScreen(
-    onGoogleSignInClick: () -> Unit
+    onGoogleSignInClick: () -> Unit,
+    isLoading: Boolean
 ) {
     Scaffold { innerPadding ->
         Column(
@@ -106,7 +107,8 @@ fun WelcomeScreen(
             Spacer(modifier = Modifier.weight(1f))
 
             AuthBottomSection(
-                onGoogleSignInClick = onGoogleSignInClick
+                onGoogleSignInClick = onGoogleSignInClick,
+                isLoading = isLoading
             )
         }
     }
@@ -117,7 +119,8 @@ fun WelcomeScreen(
 fun PreviewWelcome() {
     HubSpaceTheme(darkTheme = true) {
         WelcomeScreen(
-            onGoogleSignInClick = {}
+            onGoogleSignInClick = {},
+            isLoading = true,
         )
     }
 }
