@@ -83,7 +83,8 @@ fun HubSpaceNavHost(
                                 navController.navigate(Screen.Welcome.route) {
                                     popUpTo(Screen.Home.route) { inclusive = true }
                                 }
-                            }
+                            },
+                            viewModel = viewModel
                         )
                     }
                     composable(Screen.Unauthorized.route) {
