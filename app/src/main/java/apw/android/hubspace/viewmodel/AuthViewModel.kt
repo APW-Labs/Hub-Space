@@ -92,11 +92,19 @@ class AuthViewModel(
                         val timestamp = it["at"] as? com.google.firebase.Timestamp
                         val timeMillis = timestamp?.toDate()?.time ?: 0L
 
-                        EventItem(
-                            title = it["title"] as? String ?: "",
-                            description = it["description"] as? String ?: "",
-                            timeMillis = timeMillis
-                        )
+                        val expiresAt = it["expiresAt"] as? com.google.firebase.Timestamp
+                        val isExpired =
+                            expiresAt != null && expiresAt.toDate().before(java.util.Date())
+
+                        if (isExpired) {
+                            EventItem(
+                                title = it["title"] as? String ?: "",
+                                description = it["description"] as? String ?: "",
+                                timeMillis = timeMillis
+                            )
+                        } else {
+                            null
+                        }
                     }
 
                     val annMap = hubSpaceRepo.getLatestAnnouncement(activeTeam)
@@ -107,7 +115,8 @@ class AuthViewModel(
                         val pin = it["pin"] as? Boolean ?: false
 
                         val expiresTimestamp = it["expiresAt"] as? com.google.firebase.Timestamp
-                        val isExpired = expiresTimestamp != null && expiresTimestamp.toDate().before(java.util.Date())
+                        val isExpired = expiresTimestamp != null && expiresTimestamp.toDate()
+                            .before(java.util.Date())
 
                         if (!isExpired) {
                             AnnouncementItem(
@@ -203,7 +212,8 @@ class AuthViewModel(
                     val pin = it["pin"] as? Boolean ?: false
 
                     val expiresTimestamp = it["expiresAt"] as? com.google.firebase.Timestamp
-                    val isExpired = expiresTimestamp != null && expiresTimestamp.toDate().before(java.util.Date())
+                    val isExpired = expiresTimestamp != null && expiresTimestamp.toDate()
+                        .before(java.util.Date())
 
                     if (!isExpired) {
                         AnnouncementItem(
@@ -223,11 +233,17 @@ class AuthViewModel(
                     val timestamp = it["at"] as? com.google.firebase.Timestamp
                     val timeMillis = timestamp?.toDate()?.time ?: 0L
 
-                    EventItem(
-                        title = it["title"] as? String ?: "",
-                        description = it["description"] as? String ?: "",
-                        timeMillis = timeMillis
-                    )
+                    val expiresAt = it["expiresAt"] as? com.google.firebase.Timestamp
+                    val isExpired = expiresAt != null && expiresAt.toDate().before(java.util.Date())
+                    if (!isExpired) {
+                        EventItem(
+                            title = it["title"] as? String ?: "",
+                            description = it["description"] as? String ?: "",
+                            timeMillis = timeMillis
+                        )
+                    } else {
+                        null
+                    }
                 }
             } catch (e: Exception) {
 
