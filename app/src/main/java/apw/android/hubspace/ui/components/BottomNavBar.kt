@@ -22,7 +22,7 @@ sealed class BottomNavTab(
 ) {
     object Home: BottomNavTab("home", "Home", "home")
     object Announcements: BottomNavTab("announcements", "Feed", "feed")
-    object Timeline: BottomNavTab("timeline", "Timeline", "timeline")
+    object Timeline: BottomNavTab("timeline", "Tasks", "timeline")
     object Reminders: BottomNavTab("reminders", "Reminders", "alarm")
     object Notes: BottomNavTab("notes", "Notes", "notes")
 }

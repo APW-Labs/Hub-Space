@@ -7,24 +7,23 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Scaffold
-import androidx.compose.runtime.*
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.compose.viewModel
-import apw.android.hubspace.backend.HubSpaceRepository
-import apw.android.hubspace.ui.components.AnnouncementItem
 import apw.android.hubspace.ui.components.BottomNavBar
-import apw.android.hubspace.ui.components.EventItem
 import apw.android.hubspace.ui.components.QuickStatsRow
 import apw.android.hubspace.ui.components.SmartHeroBanner
+import apw.android.hubspace.ui.components.SummarizeDayCard
 import apw.android.hubspace.ui.components.TeamSelectionSheet
 import apw.android.hubspace.ui.components.TopBar
 import apw.android.hubspace.ui.theme.HubSpaceTheme
 import apw.android.hubspace.viewmodel.AuthViewModel
-import com.google.firebase.Timestamp
-import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -33,7 +32,7 @@ fun MainScreen(
     viewModel: AuthViewModel = viewModel(),
     onSignOutClicked: () -> Unit
 ) {
-    var currentTeam = viewModel.userTeam
+    val currentTeam = viewModel.userTeam
     var showTeamSheet by remember { mutableStateOf(false) }
 
     val teamsList = viewModel.teamsList
@@ -75,13 +74,19 @@ fun MainScreen(
                 upcomingEvent = latestEvent,
                 modifier = Modifier.padding(vertical = 8.dp)
             )
-
             Spacer(modifier = Modifier.height(10.dp))
-
             QuickStatsRow(
                 activeTasksCount = 4,
                 teamMembersCount = membersCount,
                 deadlinesCount = 1
+            )
+            Spacer(modifier = Modifier.height(14.dp))
+            SummarizeDayCard(
+                currentTeam = currentTeam,
+                pendingTasksCount = 4,
+                hasUpcomingEvent = latestEvent != null,
+                eventTitle = latestEvent?.title ?: "",
+                latestAnnouncementTitle = latestAnnouncement?.title ?: ""
             )
         }
     }
