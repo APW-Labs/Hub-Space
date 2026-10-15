@@ -1,7 +1,9 @@
 package apw.android.hubspace.viewmodel
 
 import android.content.Context
+import android.util.Log
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
@@ -9,32 +11,46 @@ import androidx.lifecycle.viewModelScope
 import apw.android.hubspace.auth.AuthRepository
 import apw.android.hubspace.auth.AuthResult
 import apw.android.hubspace.auth.signInWithGoogle
+import apw.android.hubspace.backend.HubSpaceRepository
+import apw.android.hubspace.ui.components.AnnouncementItem
+import apw.android.hubspace.ui.components.EventItem
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
 sealed class AuthUiState {
-    object Idle: AuthUiState()
-    object Loading: AuthUiState()
+    object Idle : AuthUiState()
+    object Loading : AuthUiState()
     data class Success(val userId: String) : AuthUiState()
-    data class Unauthorized(val email: String): AuthUiState()
+    data class Unauthorized(val email: String) : AuthUiState()
     data class Error(val message: String) : AuthUiState()
 }
 
 class AuthViewModel(
-    private val repository: AuthRepository = AuthRepository()
-): ViewModel() {
+    private val repository: AuthRepository = AuthRepository(),
+    private val hubSpaceRepo: HubSpaceRepository = HubSpaceRepository()
+) : ViewModel() {
     private val _uiState = MutableStateFlow<AuthUiState>(AuthUiState.Idle)
     val uiState: StateFlow<AuthUiState> = _uiState.asStateFlow()
+
+    var memberCount by mutableIntStateOf(0)
+        private set
+    var latestEvent by mutableStateOf<EventItem?>(null)
+        private set
+    var latestAnnouncement by mutableStateOf<AnnouncementItem?>(null)
+        private set
+    var userTeam by mutableStateOf("")
+        private set
+    var teamsList by mutableStateOf<List<String>>(emptyList())
+        private set
 
     fun onGoogleSignInClicked(context: Context, webClientId: String) {
         viewModelScope.launch {
             _uiState.value = AuthUiState.Loading
 
             val credential = signInWithGoogle(
-                context = context,
-                webClientId = webClientId
+                context = context, webClientId = webClientId
             )
 
             if (credential == null) {
@@ -45,14 +61,70 @@ class AuthViewModel(
                     is AuthResult.Success -> {
                         _uiState.value = AuthUiState.Success(result.email)
                     }
+
                     is AuthResult.Unauthorized -> {
                         _uiState.value = AuthUiState.Unauthorized(result.message)
                     }
+
                     is AuthResult.Failed -> {
                         _uiState.value = AuthUiState.Error(result.message)
                     }
                 }
             }
+        }
+    }
+
+    private suspend fun fetchInitialData(email: String) {
+        try {
+            val teams = hubSpaceRepo.getUserTeams(email)
+            teamsList = teams
+
+            if (teams.isNotEmpty()) {
+                val activeTeam = teams.firstOrNull() ?: "APW Labs"
+
+                userTeam = activeTeam
+                if (activeTeam.isNotEmpty()) {
+                    val teamInfo = hubSpaceRepo.getTeamMembersInfo(activeTeam)
+                    memberCount = teamInfo.memberCount
+
+                    val eventMap = hubSpaceRepo.getLatestEvent(activeTeam)
+                    latestEvent = eventMap?.let {
+                        val timestamp = it["at"] as? com.google.firebase.Timestamp
+                        val timeMillis = timestamp?.toDate()?.time ?: 0L
+
+                        EventItem(
+                            title = it["title"] as? String ?: "",
+                            description = it["description"] as? String ?: "",
+                            timeMillis = timeMillis
+                        )
+                    }
+
+                    val annMap = hubSpaceRepo.getLatestAnnouncement(activeTeam)
+                    latestAnnouncement = annMap?.let {
+                        val title = it["title"] as? String ?: ""
+                        val body = it["body"] as? String ?: ""
+                        val by = it["by"] as? String ?: ""
+                        val pin = it["pin"] as? Boolean ?: false
+
+                        val expiresTimestamp = it["expiresAt"] as? com.google.firebase.Timestamp
+                        val isExpired = expiresTimestamp != null && expiresTimestamp.toDate().before(java.util.Date())
+
+                        if (!isExpired) {
+                            AnnouncementItem(
+                                title = title,
+                                body = body,
+                                by = by,
+                                expiresAt = expiresTimestamp?.toDate().toString(),
+                                pin = pin
+                            )
+                        } else {
+                            null
+                        }
+                    }
+                }
+            }
+        } catch (e: Exception) {
+            e.message?.let { Log.e("AuthViewModel", it) }
         }
     }
 
@@ -68,11 +140,14 @@ class AuthViewModel(
 
             when (val result = repository.checkStatus()) {
                 is AuthResult.Success -> {
+                    fetchInitialData(result.email)
                     _uiState.value = AuthUiState.Success(result.email)
                 }
+
                 is AuthResult.Unauthorized -> {
                     _uiState.value = AuthUiState.Unauthorized(currentUser.email ?: "")
                 }
+
                 is AuthResult.Failed -> {
                     _uiState.value = AuthUiState.Error(result.message)
                 }
@@ -88,12 +163,74 @@ class AuthViewModel(
                 is AuthResult.Success -> {
                     _uiState.value = AuthUiState.Success(result.email)
                 }
+
                 is AuthResult.Unauthorized -> {
-                    _uiState.value = AuthUiState.Error("Still not whitelisted. Contact admin if already added.")
+                    _uiState.value =
+                        AuthUiState.Error("Still not whitelisted. Contact admin if already added.")
                 }
+
                 is AuthResult.Failed -> {
                     _uiState.value = AuthUiState.Error(result.message)
                 }
+            }
+        }
+    }
+
+    fun switchTeam(newTeam: String) {
+        if (newTeam == userTeam) return
+
+        userTeam = newTeam
+        viewModelScope.launch {
+            try {
+                val teamInfo = hubSpaceRepo.getTeamMembersInfo(newTeam)
+                memberCount = teamInfo.memberCount
+
+//                val annMap = hubSpaceRepo.getLatestAnnouncement(newTeam)
+//                latestAnnouncement = annMap?.let {
+//                    AnnouncementItem(
+//                        title = it["title"] as? String ?: "",
+//                        body = it["body"] as? String ?: "",
+//                        by = it["by"] as? String ?: "",
+//                        pin = it["pin"] as? Boolean ?: false
+//                    )
+//                }
+
+                val annMap = hubSpaceRepo.getLatestAnnouncement(newTeam)
+                latestAnnouncement = annMap?.let {
+                    val title = it["title"] as? String ?: ""
+                    val body = it["body"] as? String ?: ""
+                    val by = it["by"] as? String ?: ""
+                    val pin = it["pin"] as? Boolean ?: false
+
+                    val expiresTimestamp = it["expiresAt"] as? com.google.firebase.Timestamp
+                    val isExpired = expiresTimestamp != null && expiresTimestamp.toDate().before(java.util.Date())
+
+                    if (!isExpired) {
+                        AnnouncementItem(
+                            title = title,
+                            body = body,
+                            by = by,
+                            expiresAt = expiresTimestamp?.toDate().toString(),
+                            pin = pin
+                        )
+                    } else {
+                        null
+                    }
+                }
+
+                val eventMap = hubSpaceRepo.getLatestEvent(newTeam)
+                latestEvent = eventMap?.let {
+                    val timestamp = it["at"] as? com.google.firebase.Timestamp
+                    val timeMillis = timestamp?.toDate()?.time ?: 0L
+
+                    EventItem(
+                        title = it["title"] as? String ?: "",
+                        description = it["description"] as? String ?: "",
+                        timeMillis = timeMillis
+                    )
+                }
+            } catch (e: Exception) {
+
             }
         }
     }
