@@ -96,7 +96,7 @@ class AuthViewModel(
                         val isExpired =
                             expiresAt != null && expiresAt.toDate().before(java.util.Date())
 
-                        if (isExpired) {
+                        if (!isExpired) {
                             EventItem(
                                 title = it["title"] as? String ?: "",
                                 description = it["description"] as? String ?: "",
