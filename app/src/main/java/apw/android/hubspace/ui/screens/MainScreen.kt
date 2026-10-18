@@ -1,10 +1,9 @@
 package apw.android.hubspace.ui.screens
 
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
@@ -17,6 +16,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import apw.android.hubspace.ui.components.BottomNavBar
+import apw.android.hubspace.ui.components.GitHubTeamProfileCard
 import apw.android.hubspace.ui.components.QuickStatsRow
 import apw.android.hubspace.ui.components.SmartHeroBanner
 import apw.android.hubspace.ui.components.SummarizeDayCard
@@ -34,12 +34,9 @@ fun MainScreen(
 ) {
     val currentTeam = viewModel.userTeam
     var showTeamSheet by remember { mutableStateOf(false) }
-
     val teamsList = viewModel.teamsList
-
     val latestAnnouncement = viewModel.latestAnnouncement
     val latestEvent = viewModel.latestEvent
-
     val membersCount = viewModel.memberCount
 
     Scaffold(
@@ -61,33 +58,43 @@ fun MainScreen(
             )
         }
     ) { innerPadding ->
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(innerPadding)
-                .padding(16.dp)
+        LazyColumn(
+            modifier = Modifier.fillMaxSize(),
+            contentPadding = PaddingValues(
+                start = 16.dp,
+                end = 16.dp,
+                top = innerPadding.calculateTopPadding() + 16.dp,
+                bottom = innerPadding.calculateBottomPadding() + 16.dp
+            ),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            SmartHeroBanner(
-                currentTeam = currentTeam,
-                userName = email.substringBefore("@"),
-                pinnedAnnouncement = latestAnnouncement,
-                upcomingEvent = latestEvent,
-                modifier = Modifier.padding(vertical = 8.dp)
-            )
-            Spacer(modifier = Modifier.height(10.dp))
-            QuickStatsRow(
-                activeTasksCount = 4,
-                teamMembersCount = membersCount,
-                deadlinesCount = 1
-            )
-            Spacer(modifier = Modifier.height(14.dp))
-            SummarizeDayCard(
-                currentTeam = currentTeam,
-                pendingTasksCount = 4,
-                hasUpcomingEvent = latestEvent != null,
-                eventTitle = latestEvent?.title ?: "",
-                latestAnnouncementTitle = latestAnnouncement?.title ?: ""
-            )
+            item {
+                SmartHeroBanner(
+                    currentTeam = currentTeam,
+                    userName = email.substringBefore("@"),
+                    pinnedAnnouncement = latestAnnouncement,
+                    upcomingEvent = latestEvent
+                )
+            }
+            item {
+                QuickStatsRow(
+                    activeTasksCount = 4,
+                    teamMembersCount = membersCount,
+                    deadlinesCount = 1
+                )
+            }
+            item {
+                GitHubTeamProfileCard()
+            }
+            item {
+                SummarizeDayCard(
+                    currentTeam = currentTeam,
+                    pendingTasksCount = 4,
+                    hasUpcomingEvent = latestEvent != null,
+                    eventTitle = latestEvent?.title ?: "",
+                    latestAnnouncementTitle = latestAnnouncement?.title ?: ""
+                )
+            }
         }
     }
 

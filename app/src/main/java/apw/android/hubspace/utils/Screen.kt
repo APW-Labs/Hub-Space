@@ -5,6 +5,5 @@ sealed class Screen(
 ) {
     object Welcome: Screen("welcome")
     object Home: Screen("home")
-    object AdminPanel: Screen("admin_panel")
     object Unauthorized: Screen("unauthorized")
 }
