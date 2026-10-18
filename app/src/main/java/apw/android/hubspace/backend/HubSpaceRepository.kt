@@ -121,4 +121,13 @@ class HubSpaceRepository {
             null
         }
     }
+
+    suspend fun getGithubUsername(teamName: String): String {
+        return try {
+            val snapshot = database.collection("teams").document(teamName).get().await()
+            snapshot.getString("githubUsername") ?: "apw-android"
+        } catch (e: Exception) {
+            "apw-android"
+        }
+    }
 }

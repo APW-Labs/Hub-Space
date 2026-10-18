@@ -44,6 +44,8 @@ class AuthViewModel(
         private set
     var teamsList by mutableStateOf<List<String>>(emptyList())
         private set
+    var teamGithubUserName by mutableStateOf("apw-android")
+        private set
 
     fun onGoogleSignInClicked(context: Context, webClientId: String) {
         viewModelScope.launch {
@@ -83,6 +85,7 @@ class AuthViewModel(
                 val activeTeam = teams.firstOrNull() ?: "APW Labs"
 
                 userTeam = activeTeam
+                teamGithubUserName = hubSpaceRepo.getGithubUsername(activeTeam)
                 if (activeTeam.isNotEmpty()) {
                     val teamInfo = hubSpaceRepo.getTeamMembersInfo(activeTeam)
                     memberCount = teamInfo.memberCount
@@ -191,6 +194,7 @@ class AuthViewModel(
         userTeam = newTeam
         viewModelScope.launch {
             try {
+                teamGithubUserName = hubSpaceRepo.getGithubUsername(newTeam)
                 val teamInfo = hubSpaceRepo.getTeamMembersInfo(newTeam)
                 memberCount = teamInfo.memberCount
 
