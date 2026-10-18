@@ -48,12 +48,10 @@ fun ValueCard(
         modifier = modifier.fillMaxWidth(),
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(
-            // Modern M3 Surface Container Fill
             containerColor = MaterialTheme.colorScheme.surfaceContainerLow
         ),
         border = BorderStroke(
             width = 1.dp,
-            // Subtle Outline/Border for both Light & Dark Theme
             color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
         )
     ) {
@@ -63,7 +61,6 @@ fun ValueCard(
                 .padding(14.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            // Left Rounded Icon Container
             Box(
                 modifier = Modifier
                     .size(40.dp)
@@ -79,7 +76,6 @@ fun ValueCard(
                 )
             }
 
-            // Right Title & Description Block
             Column(
                 modifier = Modifier
                     .padding(start = 14.dp)
