@@ -16,6 +16,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import apw.android.hubspace.ui.components.BottomNavBar
+import apw.android.hubspace.ui.components.GitHubLiveCard
 import apw.android.hubspace.ui.components.GitHubTeamProfileCard
 import apw.android.hubspace.ui.components.QuickStatsRow
 import apw.android.hubspace.ui.components.SmartHeroBanner
@@ -84,7 +85,9 @@ fun MainScreen(
                 )
             }
             item {
-                GitHubTeamProfileCard()
+                GitHubLiveCard(
+                    username = viewModel.teamGithubUserName
+                )
             }
             item {
                 SummarizeDayCard(
