@@ -12,8 +12,11 @@ import apw.android.hubspace.auth.AuthRepository
 import apw.android.hubspace.auth.AuthResult
 import apw.android.hubspace.auth.signInWithGoogle
 import apw.android.hubspace.backend.HubSpaceRepository
+import apw.android.hubspace.backend.data.FeedItem
+import apw.android.hubspace.backend.data.FeedType
 import apw.android.hubspace.ui.components.AnnouncementItem
 import apw.android.hubspace.ui.components.EventItem
+import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -46,6 +49,23 @@ class AuthViewModel(
         private set
     var teamGithubUserName by mutableStateOf("apw-android")
         private set
+    var feedList by mutableStateOf<List<FeedItem>>(emptyList())
+        private set
+    var isLoadingFeed by mutableStateOf(false)
+        private set
+
+    private fun formatTimestamp(timestampObj: Any?): String {
+        return if (timestampObj is com.google.firebase.Timestamp) {
+            val netDate = timestampObj.toDate()
+            android.text.format.DateUtils.getRelativeTimeSpanString(
+                netDate.time,
+                System.currentTimeMillis(),
+                android.text.format.DateUtils.MINUTE_IN_MILLIS
+            ).toString()
+        } else {
+            "Recently"
+        }
+    }
 
     fun onGoogleSignInClicked(context: Context, webClientId: String) {
         viewModelScope.launch {
@@ -250,7 +270,51 @@ class AuthViewModel(
                     }
                 }
             } catch (e: Exception) {
+                Log.e("ERR", e.message.toString())
+            }
+        }
+    }
 
+    fun fetchTeamFeed() {
+        viewModelScope.launch {
+            isLoadingFeed = true
+
+            try {
+                val announcementsDeferred = async { hubSpaceRepo.getAnnouncements(userTeam) }
+                val eventsDeferred = async { hubSpaceRepo.getEvents(userTeam) }
+
+                val announcements = announcementsDeferred.await()
+                val events = eventsDeferred.await()
+
+                val mappedAnnouncements = announcements.map { map ->
+                    FeedItem(
+                        id = map["id"]?.toString() ?: java.util.UUID.randomUUID().toString(),
+                        title = map["title"]?.toString() ?: "Announcement",
+                        body = map["body"]?.toString() ?: "",
+                        postedBy = map["author"]?.toString() ?: "Team Lead",
+                        timeStamp = formatTimestamp(map["at"]),
+                        type = FeedType.ANNOUNCEMENT,
+                        isPinned = map["pin"] as? Boolean ?: false
+                    )
+                }
+
+                val mappedEvents = events.map { map ->
+                    FeedItem(
+                        id = map["id"]?.toString() ?: java.util.UUID.randomUUID().toString(),
+                        title = map["title"]?.toString() ?: "Team Event",
+                        body = map["description"]?.toString() ?: map["body"]?.toString() ?: "",
+                        postedBy = map["organizer"]?.toString() ?: "Coordinator",
+                        timeStamp = formatTimestamp(map["at"]),
+                        type = FeedType.EVENT,
+                        isPinned = false
+                    )
+                }
+
+                feedList = (mappedAnnouncements + mappedEvents).sortedByDescending { it.isPinned }
+            } catch (e: Exception) {
+                Log.e("AuthVM", "Error fetching team feed", e)
+            } finally {
+                isLoadingFeed = false
             }
         }
     }
