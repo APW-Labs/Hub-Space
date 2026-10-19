@@ -11,15 +11,16 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -31,7 +32,6 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
-import apw.android.hubspace.backend.data.FeedItem
 import apw.android.hubspace.backend.data.FeedType
 import apw.android.hubspace.ui.components.AnnouncementItem
 import apw.android.hubspace.ui.components.BottomNavBar
@@ -100,7 +100,10 @@ fun MainScreen(
                 }
 
                 "announcements" -> {
-                    FeedScreenContent(currentTeam = currentTeam)
+                    FeedScreenContent(
+                        currentTeam = currentTeam,
+                        viewModel = viewModel
+                    )
                 }
 
                 "timeline" -> {
@@ -177,75 +180,54 @@ fun HomeScreenContent(
 @Composable
 fun FeedScreenContent(
     currentTeam: String,
-    modifier: Modifier = Modifier
+    viewModel: AuthViewModel = viewModel()
 ) {
     var selectedFilter by remember { mutableStateOf("All") }
-    val filters = listOf("All", "Announcement", "Event", "Activity")
+    val filters = listOf("All", "Announcements", "Events", "Activity")
 
-    val feedList = remember {
-        listOf(
-            FeedItem(
-                id = "1",
-                title = "Final submission closes Sunday 6 PM",
-                body = "Devpost submission closes Sunday at 6 PM IST. Every team needs a public repo and 3-minute demo video.",
-                postedBy = "Shagun",
-                timeStamp = "2 hours ago",
-                type = FeedType.ANNOUNCEMENT,
-                isPinned = true
-            ),
-            FeedItem(
-                id = "2",
-                title = "Internal Code Review Sync",
-                body = "Joined main branch sync for HubSpace Jetpack Compose architecture review with core contributors.",
-                postedBy = "Shabd Vasudeva",
-                timeStamp = "5 hours ago",
-                type = FeedType.EVENT
-            ),
-            FeedItem(
-                id = "3",
-                title = "GitHub Actions Pipeline Status",
-                body = "Automated APK build pipeline passed successfully for release candidate v1.0.2.",
-                postedBy = "System",
-                timeStamp = "Yesterday",
-                type = FeedType.ACTIVITY
-            )
-        )
+    LaunchedEffect(currentTeam) {
+        viewModel.fetchTeamFeed()
     }
 
-    val filteredList = remember(selectedFilter, feedList) {
-        when (selectedFilter) {
-            "Announcement" -> feedList.filter { it.type == FeedType.ANNOUNCEMENT }
-            "Event" -> feedList.filter { it.type == FeedType.EVENT }
-            "Activity" -> feedList.filter { it.type == FeedType.ACTIVITY }
-            else -> feedList
-        }
+    val feedList = viewModel.feedList
+
+    val filteredList = when (selectedFilter) {
+        "Announcements" -> feedList.filter { it.type == FeedType.ANNOUNCEMENT }
+        "Events" -> feedList.filter { it.type == FeedType.EVENT }
+        "Activity" -> feedList.filter { it.type == FeedType.ACTIVITY }
+        else -> feedList
     }
 
     Column(
-        modifier = modifier
+        modifier = Modifier
             .fillMaxSize()
-            .padding(horizontal = 16.dp)
-            .padding(top = 16.dp),
+            .padding(horizontal = 16.dp, vertical = 12.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
-        Column(modifier = Modifier.fillMaxWidth()) {
-            Text(
-                text = "Team Feed",
-                style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.Bold),
-                color = MaterialTheme.colorScheme.onSurface
-            )
-            Text(
-                text = "Live updates from $currentTeam",
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Column {
+                Text(
+                    text = "Team Feed",
+                    style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.Bold),
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+                Text(
+                    text = "Live updates from $currentTeam",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
         }
 
-        LazyRow(
+        Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            items(filters) { filter ->
+            filters.forEach { filter ->
                 FilterChip(
                     selected = selectedFilter == filter,
                     onClick = { selectedFilter = filter },
@@ -255,13 +237,39 @@ fun FeedScreenContent(
             }
         }
 
-        LazyColumn(
-            modifier = Modifier.weight(1f),
-            verticalArrangement = Arrangement.spacedBy(12.dp),
-            contentPadding = PaddingValues(bottom = 24.dp)
-        ) {
-            items(filteredList, key = { it.id }) { item ->
-                FeedCard(feedItem = item)
+        Spacer(modifier = Modifier.height(4.dp))
+
+        if (viewModel.isLoadingFeed) {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .weight(1f),
+                contentAlignment = Alignment.Center
+            ) {
+                CircularProgressIndicator()
+            }
+        } else if (filteredList.isEmpty()) {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .weight(1f),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = "No updates found for $currentTeam",
+                    style = MaterialTheme.typography.bodyLarge,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+        } else {
+            LazyColumn(
+                modifier = Modifier.fillMaxSize(),
+                verticalArrangement = Arrangement.spacedBy(12.dp),
+                contentPadding = PaddingValues(bottom = 24.dp)
+            ) {
+                items(filteredList, key = { it.id }) { item ->
+                    FeedCard(feedItem = item)
+                }
             }
         }
     }
