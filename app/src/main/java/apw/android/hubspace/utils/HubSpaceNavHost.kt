@@ -84,7 +84,10 @@ fun HubSpaceNavHost(
                                     popUpTo(Screen.Home.route) { inclusive = true }
                                 }
                             },
-                            viewModel = viewModel
+                            viewModel = viewModel,
+                            onTabSelected = { route ->
+
+                            }
                         )
                     }
                     composable(Screen.Unauthorized.route) {
