@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>HubSpace: team workspace for Android</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@500;700;800&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#eceeff;--ink:#14143a;--mut:#53557f;--glass:rgba(255,255,255,.55);--edge:rgba(255,255,255,.75);--sh:rgba(70,70,170,.2);--a:#5b5bf0;--b:#0aa5c2;--c:#e8509b;--ok:#16a34a;
+box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0a0a22;--ink:#eef0ff;--mut:#a4a8d8;--glass:rgba(255,255,255,.07);--edge:rgba(255,255,255,.16);--sh:rgba(0,0,0,.5);--a:#8b8bff;--b:#22d3ee;--c:#f472b6}}
+:root[data-theme="dark"]{--bg:#0a0a22;--ink:#eef0ff;--mut:#a4a8d8;--glass:rgba(255,255,255,.07);--edge:rgba(255,255,255,.16);--sh:rgba(0,0,0,.5);--a:#8b8bff;--b:#22d3ee;--c:#f472b6}
+html{scroll-behavior:smooth;scroll-padding-top:calc(env(safe-area-inset-top,0px) + 84px)}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:400 16px/1.6 "DM Sans",system-ui,sans-serif;overflow-x:hidden}
+h1,h2,h3{font-family:"Bricolage Grotesque","DM Sans",system-ui,sans-serif;line-height:1.08;margin:0;letter-spacing:-.02em}
+p{margin:0}
+.orbs{position:fixed;inset:0;z-index:-1;overflow:hidden}
+.orbs i{position:absolute;border-radius:50%;filter:blur(70px);opacity:.55;animation:drift 22s ease-in-out infinite alternate}
+.orbs i:nth-child(1){width:46vmax;height:46vmax;background:var(--a);top:-14vmax;left:-10vmax}
+.orbs i:nth-child(2){width:38vmax;height:38vmax;background:var(--b);bottom:-12vmax;right:-8vmax;animation-delay:-8s}
+.orbs i:nth-child(3){width:28vmax;height:28vmax;background:var(--c);top:40%;left:45%;opacity:.35;animation-delay:-14s}
+@keyframes drift{to{transform:translate(8vmax,6vmax) scale(1.15)}}
+.glass{background:var(--glass);backdrop-filter:blur(20px) saturate(170%);-webkit-backdrop-filter:blur(20px) saturate(170%);border:1px solid var(--edge);box-shadow:0 12px 40px var(--sh),inset 0 1px 0 rgba(255,255,255,.25);border-radius:22px}
+.i{width:1.25em;height:1.25em;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex:none}
+.wrap{max-width:1120px;margin:0 auto;padding:0 20px}
+nav{position:sticky;top:calc(env(safe-area-inset-top,0px) + 12px);z-index:20;margin:12px auto 0;max-width:1120px;display:flex;align-items:center;gap:18px;padding:10px 14px 10px 18px;border-radius:999px}
+nav b{font:800 1.15rem "Bricolage Grotesque",sans-serif;display:flex;align-items:center;gap:8px;margin-right:auto}
+nav b span{width:26px;height:26px;border-radius:9px;background:linear-gradient(135deg,var(--a),var(--b));display:grid;place-items:center;color:#fff}
+nav a{color:var(--mut);text-decoration:none;font-weight:500;font-size:.92rem;transition:color .2s}
+nav a:hover{color:var(--ink)}
+button{font:inherit;color:inherit;cursor:pointer}
+.tg{border:1px solid var(--edge);background:var(--glass);border-radius:50%;width:36px;height:36px;display:grid;place-items:center}
+:focus-visible{outline:2px solid var(--a);outline-offset:3px}
+.hero{display:grid;grid-template-columns:1.05fr .95fr;gap:40px;align-items:center;padding:56px 0 40px}
+.hero h1{font-size:clamp(2.4rem,5.6vw,4.3rem);font-weight:800}
+.hero h1 em{font-style:normal;background:linear-gradient(100deg,var(--a),var(--b) 55%,var(--c));-webkit-background-clip:text;background-clip:text;color:transparent}
+.hero p.lead{margin:20px 0 28px;color:var(--mut);font-size:1.1rem;max-width:46ch}
+.pill{display:inline-flex;align-items:center;gap:8px;padding:6px 14px;border-radius:999px;font-size:.85rem;margin-bottom:18px}
+.pill u{width:8px;height:8px;border-radius:50%;background:#f59e0b;box-shadow:0 0 0 0 #f59e0b;animation:pulse 2s infinite;text-decoration:none}
+@keyframes pulse{70%{box-shadow:0 0 0 9px transparent}}
+.btns{display:flex;gap:12px;flex-wrap:wrap}
+.btn{display:inline-flex;align-items:center;gap:8px;padding:12px 22px;border-radius:14px;font-weight:600;text-decoration:none;border:1px solid var(--edge);background:var(--glass);transition:transform .2s,box-shadow .2s}
+.btn.p{background:linear-gradient(135deg,var(--a),var(--b));color:#fff;border:0;box-shadow:0 10px 28px var(--sh)}
+.btn:hover{transform:translateY(-2px)}
+.in{animation:rise .8s cubic-bezier(.2,.8,.2,1) both}
+.in:nth-child(2){animation-delay:.1s}.in:nth-child(3){animation-delay:.2s}.in:nth-child(4){animation-delay:.3s}
+@keyframes rise{from{opacity:0;transform:translateY(26px)}}
+/* phone */
+.stage{display:grid;justify-items:center;gap:14px}
+.phone{width:min(310px,100%);height:600px;border-radius:38px;padding:10px;display:flex;flex-direction:column;animation:float 6s ease-in-out infinite}
+@keyframes float{50%{transform:translateY(-10px)}}
+.scr{flex:1;border-radius:30px;background:color-mix(in srgb,var(--bg) 70%,transparent);overflow:hidden;display:flex;flex-direction:column;position:relative}
+.top{display:flex;align-items:center;justify-content:space-between;padding:14px 16px 8px;font-weight:700;font-family:"Bricolage Grotesque",sans-serif}
+.team{font:500 .75rem "DM Sans";padding:4px 10px;border-radius:99px;border:1px solid var(--edge);background:var(--glass);cursor:pointer}
+.box{flex:1;position:relative;overflow:hidden}
+.pane{position:absolute;inset:0;padding:6px 14px 14px;overflow:auto;opacity:0;transform:translateX(18px);pointer-events:none;transition:opacity .35s,transform .35s}
+.pane.on{opacity:1;transform:none;pointer-events:auto}
+.hb{border-radius:18px;padding:14px;color:#fff;background:linear-gradient(135deg,var(--a),var(--b));margin-bottom:10px}
+.hb small{opacity:.85}.hb h3{font-size:1.15rem;margin-top:2px}
+.row{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:10px}
+.st{padding:10px 6px;text-align:center;border-radius:14px;font-size:.7rem;color:var(--mut)}
+.st b{display:block;font:800 1.2rem "Bricolage Grotesque";color:var(--ink)}
+.mc{padding:12px;border-radius:16px;font-size:.8rem;margin-bottom:10px;color:var(--mut)}
+.mc strong{color:var(--ink);display:flex;align-items:center;gap:6px;margin-bottom:4px;font-size:.85rem}
+.bars{display:flex;gap:3px;margin-top:8px;align-items:flex-end;height:30px}
+.bars i{flex:1;background:linear-gradient(var(--b),var(--a));border-radius:3px;transform-origin:bottom;animation:grow 1.2s both}
+@keyframes grow{from{transform:scaleY(.1)}}
+.chips{display:flex;gap:6px;overflow:auto;padding-bottom:8px}
+.chip{border:1px solid var(--edge);background:var(--glass);border-radius:99px;padding:4px 11px;font-size:.72rem;white-space:nowrap;transition:background .2s,color .2s}
+.chip.on{background:var(--a);color:#fff;border-color:transparent}
+.fi{padding:10px 12px;border-radius:14px;margin-bottom:8px;font-size:.78rem;color:var(--mut);animation:rise .4s both}
+.fi b{display:block;color:var(--ink);font-size:.84rem}
+.tag{font-size:.65rem;padding:1px 7px;border-radius:99px;background:color-mix(in srgb,var(--c) 22%,transparent);color:var(--c);margin-right:6px}
+.tag.e{background:color-mix(in srgb,var(--b) 22%,transparent);color:var(--b)}
+.tag.a2{background:color-mix(in srgb,var(--ok) 22%,transparent);color:var(--ok)}
+.fab{position:absolute;right:14px;bottom:12px;width:44px;height:44px;border-radius:15px;border:0;background:linear-gradient(135deg,var(--c),var(--a));color:#fff;display:grid;place-items:center;box-shadow:0 8px 20px var(--sh);transition:transform .2s}
+.fab:hover{transform:rotate(90deg) scale(1.08)}
+.nv{display:flex;padding:6px 8px 10px;gap:4px;border-top:1px solid var(--edge);background:var(--glass)}
+.nv button{flex:1;border:0;background:none;display:grid;justify-items:center;gap:2px;font-size:.68rem;color:var(--mut);padding:6px 0;border-radius:14px;transition:all .25s}
+.nv button.on{color:var(--ink);background:color-mix(in srgb,var(--a) 22%,transparent)}
+.meter{display:flex;gap:10px;font-size:.8rem;color:var(--mut)}
+.meter span{padding:6px 12px;border-radius:99px}.meter b{color:var(--ink)}
+section{padding:72px 0}
+.sh{max-width:56ch;margin-bottom:34px}
+.sh h2{font-size:clamp(1.8rem,3.6vw,2.7rem);font-weight:800}
+.sh p{color:var(--mut);margin-top:12px}
+/* arch */
+.arch{padding:28px;display:grid;gap:22px}
+.flow{display:flex;align-items:center;gap:0;flex-wrap:wrap;justify-content:center}
+.nd{padding:12px 18px;border-radius:16px;border:1px solid var(--edge);background:var(--glass);display:flex;align-items:center;gap:8px;font-weight:600;font-size:.9rem;transition:all .25s}
+.nd.on{background:linear-gradient(135deg,var(--a),var(--b));color:#fff;transform:translateY(-3px);box-shadow:0 10px 24px var(--sh)}
+.ln{width:46px;height:3px;border-radius:2px;background:repeating-linear-gradient(90deg,var(--a) 0 6px,transparent 6px 12px);background-size:24px 3px;animation:dash 1s linear infinite;opacity:.7}
+@keyframes dash{to{background-position:24px 0}}
+.det{min-height:3.4em;color:var(--mut);text-align:center;max-width:62ch;margin:0 auto}
+/* parallel */
+.par{padding:28px;display:grid;gap:18px}
+.lane{display:grid;gap:6px;font-size:.88rem}
+.lane h3{font:600 .95rem "DM Sans"}
+.trk{height:12px;border-radius:99px;background:color-mix(in srgb,var(--ink) 10%,transparent);overflow:hidden;display:flex}
+.trk i{display:block;height:100%;width:0;transition:width linear}
+.trk i.x{background:var(--a)}.trk i.y{background:var(--c)}
+.res{color:var(--mut);font-size:.85rem;min-height:1.4em}
+.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:18px}
+.card{padding:24px;transition:transform .3s,box-shadow .3s}
+.card:hover{transform:translateY(-5px)}
+.ic{width:44px;height:44px;border-radius:14px;display:grid;place-items:center;color:#fff;margin-bottom:14px;background:linear-gradient(135deg,var(--a),var(--b))}
+.card:nth-child(3n+2) .ic{background:linear-gradient(135deg,var(--b),var(--ok))}
+.card:nth-child(3n) .ic{background:linear-gradient(135deg,var(--c),var(--a))}
+.card h3{font-size:1.15rem;margin-bottom:6px}.card p{color:var(--mut);font-size:.93rem}
+.rm{display:grid;grid-template-columns:repeat(2,1fr);gap:18px}
+.rm .card{display:flex;gap:16px;align-items:flex-start}
+.rm .ic{margin:0;background:color-mix(in srgb,var(--ink) 12%,transparent);color:var(--ink)}
+.soon{font-size:.72rem;padding:2px 10px;border-radius:99px;border:1px dashed var(--mut);color:var(--mut);margin-left:8px;font-weight:500;vertical-align:middle}
+.stk{display:flex;flex-wrap:wrap;gap:10px}
+.stk span{padding:9px 16px;border-radius:99px;font-weight:500;font-size:.9rem;border:1px solid var(--edge);background:var(--glass);backdrop-filter:blur(12px);transition:transform .2s}
+.stk span:hover{transform:translateY(-3px) scale(1.04)}
+footer{text-align:center;color:var(--mut);padding:40px 20px 56px;font-size:.9rem}
+@media (max-width:860px){.hero{grid-template-columns:1fr;padding-top:36px}.grid{grid-template-columns:1fr 1fr}.rm{grid-template-columns:1fr}nav a.hm{display:none}}
+@media (max-width:560px){.grid{grid-template-columns:1fr}.ln{width:3px;height:22px;background:repeating-linear-gradient(0deg,var(--a) 0 6px,transparent 6px 12px)}.flow{flex-direction:column}}
+@media (prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+<symbol id="home" viewBox="0 0 24 24"><path d="M3 10.5 12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></symbol>
+<symbol id="feed" viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></symbol>
+<symbol id="task" viewBox="0 0 24 24"><path d="m9 11 3 3L22 4M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></symbol>
+<symbol id="bolt" viewBox="0 0 24 24"><path d="M13 2 3 14h9l-1 8 10-12h-9z"/></symbol>
+<symbol id="users" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8M23 21v-2a4 4 0 0 0-3-3.9M16 3.1a4 4 0 0 1 0 7.8"/></symbol>
+<symbol id="bell" viewBox="0 0 24 24"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9M13.7 21a2 2 0 0 1-3.4 0"/></symbol>
+<symbol id="link" viewBox="0 0 24 24"><path d="M10 13a5 5 0 0 0 7.5.5l3-3a5 5 0 0 0-7-7l-1.7 1.7M14 11a5 5 0 0 0-7.5-.5l-3 3a5 5 0 0 0 7 7l1.7-1.7"/></symbol>
+<symbol id="spark" viewBox="0 0 24 24"><path d="m12 3 1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9z"/></symbol>
+<symbol id="layers" viewBox="0 0 24 24"><path d="m12 2 10 5-10 5L2 7zM2 17l10 5 10-5M2 12l10 5 10-5"/></symbol>
+<symbol id="plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+<symbol id="shield" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></symbol>
+<symbol id="db" viewBox="0 0 24 24"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5v14c0 1.7 4 3 9 3s9-1.3 9-3V5M3 12c0 1.7 4 3 9 3s9-1.3 9-3"/></symbol>
+<symbol id="moon" viewBox="0 0 24 24"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></symbol>
+<symbol id="key" viewBox="0 0 24 24"><circle cx="8" cy="15" r="4"/><path d="m11 12 9-9M16 7l3 3"/></symbol>
+</defs></svg>
+<div class="orbs" aria-hidden="true"><i></i><i></i><i></i></div>
+
+<nav class="glass">
+  <b><span><svg class="i" style="width:15px;height:15px"><use href="#users"/></svg></span>HubSpace</b>
+  <a class="hm" href="#how">How it works</a><a class="hm" href="#data">Fast data</a><a href="#features">Features</a><a href="#roadmap">Roadmap</a>
+  <button class="tg" id="theme" aria-label="Toggle theme"><svg class="i"><use href="#moon"/></svg></button>
+</nav>
+
+<main class="wrap">
+<header class="hero">
+  <div>
+    <div class="pill glass in"><u></u>Currently in active development phase</div>
+    <h1 class="in">Teams move faster when <em>nothing flickers.</em></h1>
+    <p class="lead in">HubSpace is an Android workspace for teams, built with Jetpack Compose and Material 3. Switch teams, read the feed and check your day without a single layout jump.</p>
+    <div class="btns in"><a class="btn p" href="#how"><svg class="i"><use href="#bolt"/></svg>See how it works</a><a class="btn" href="#roadmap"><svg class="i"><use href="#layers"/></svg>View roadmap</a></div>
+  </div>
+  <div class="stage in">
+    <div class="phone glass"><div class="scr">
+      <div class="top">HubSpace<button class="team" id="team">All teams ▾</button></div>
+      <div class="box">
+        <div class="pane on" id="p-home">
+          <div class="hb"><small>Today</small><h3>Good morning, team</h3></div>
+          <div class="row"><div class="st glass"><b>3</b>Tasks</div><div class="st glass"><b>2</b>Events</div><div class="st glass"><b>1</b>Notice</div></div>
+          <div class="mc glass"><strong><svg class="i"><use href="#spark"/></svg>Daily brief</strong>Sprint review at 4 PM. One notice about Friday’s release freeze.</div>
+          <div class="mc glass"><strong><svg class="i"><use href="#bolt"/></svg>GitHub activity</strong>12-day streak, 18 repositories<div class="bars" id="bars"></div></div>
+        </div>
+        <div class="pane" id="p-feed">
+          <div class="chips" id="chips"></div>
+          <div id="feed"></div>
+          <button class="fab" aria-label="Post an update"><svg class="i"><use href="#plus"/></svg></button>
+        </div>
+        <div class="pane" id="p-task"><div class="mc glass" style="margin-top:30px;text-align:center"><strong style="justify-content:center"><svg class="i"><use href="#task"/></svg>Tasks board</strong>Checkable team lists are on the roadmap.</div></div>
+      </div>
+      <div class="nv" id="nav">
+        <button class="on" data-r="home"><svg class="i"><use href="#home"/></svg>Home</button>
+        <button data-r="feed"><svg class="i"><use href="#feed"/></svg>Feed</button>
+        <button data-r="task"><svg class="i"><use href="#task"/></svg>Tasks</button>
+      </div>
+    </div></div>
+    <div class="meter"><span class="glass">Scaffold builds: <b>1</b></span><span class="glass">Content swaps: <b id="sw">0</b></span></div>
+  </div>
+</header>
+
+<section id="how">
+  <div class="sh"><h2>One scaffold. One source of truth.</h2><p>Try the phone above: the top bar and bottom bar never rebuild. Only the content inside the box changes. Tap a block below to see what each layer does.</p></div>
+  <div class="arch glass">
+    <div class="flow" id="flow">
+      <div class="nd on" data-d="Compose UI draws state and sends events up. The root Scaffold lives in MainScreen, and a local currentRoute swaps the content inside a Box, so tabs never cause layout shifts."><svg class="i"><use href="#home"/></svg>Compose UI</div><div class="ln"></div>
+      <div class="nd" data-d="AuthViewModel is the single source of truth. It checks the session on startup, holds the active team, and exposes immutable state that every screen reads."><svg class="i"><use href="#shield"/></svg>AuthViewModel</div><div class="ln"></div>
+      <div class="nd" data-d="The repository maps Firestore documents to AnnouncementItem, EventItem and FeedItem, and filters out anything past expiresAt or its event time before it reaches the UI."><svg class="i"><use href="#layers"/></svg>Repository</div><div class="ln"></div>
+      <div class="nd" data-d="Firebase Auth signs people in and checks the whitelisted_users collection. Cloud Firestore syncs teams, users, announcements and events. FCM delivers push notifications."><svg class="i"><use href="#db"/></svg>Firebase</div>
+    </div>
+    <p class="det" id="det"></p>
+  </div>
+</section>
+
+<section id="data">
+  <div class="sh"><h2>Fetch in parallel, not in line.</h2><p>Announcements and events load at the same moment with <code>async</code> inside <code>viewModelScope</code>, so the feed waits for the slowest request instead of the sum of both.</p></div>
+  <div class="par glass">
+    <div class="lane"><h3>Sequential: announcements, then events</h3><div class="trk"><i class="x" id="s1"></i><i class="y" id="s2"></i></div></div>
+    <div class="lane"><h3>Parallel with async: both at once</h3><div class="trk" style="display:block"><i class="x" id="q1" style="height:6px;margin-bottom:0"></i></div><div class="trk" style="margin-top:2px;display:block"><i class="y" id="q2" style="height:100%"></i></div></div>
+    <div class="res" id="res">Press the button to compare.</div>
+    <div class="btns"><button class="btn p" id="run"><svg class="i"><use href="#bolt"/></svg>Run the fetch</button></div>
+  </div>
+</section>
+
+<section id="features">
+  <div class="sh"><h2>Built for the daily loop.</h2><p>Everything a team opens the app for, ready the moment it appears.</p></div>
+  <div class="grid">
+    <div class="card glass"><div class="ic"><svg class="i"><use href="#bolt"/></svg></div><h3>Zero-flicker loading</h3><p>State is pre-fetched in the ViewModel, so screens appear complete with no layout shift and no duplicate Firestore reads.</p></div>
+    <div class="card glass"><div class="ic"><svg class="i"><use href="#users"/></svg></div><h3>Multi-team workspace</h3><p>Switch teams from a selection sheet, or pick “All teams”. Every screen follows along reactively.</p></div>
+    <div class="card glass"><div class="ic"><svg class="i"><use href="#spark"/></svg></div><h3>Smart daily brief</h3><p>SummarizeDayCard pulls active tasks, upcoming deadlines and notices into one glance.</p></div>
+    <div class="card glass"><div class="ic"><svg class="i"><use href="#link"/></svg></div><h3>Live GitHub activity</h3><p>GitHubLiveCard shows contribution stats, streaks and repository counts, fetched with coroutine-safe networking.</p></div>
+    <div class="card glass"><div class="ic"><svg class="i"><use href="#bell"/></svg></div><h3>Push notifications</h3><p>A custom FirebaseMessagingService delivers alerts to the system tray even when the app is closed.</p></div>
+    <div class="card glass"><div class="ic"><svg class="i"><use href="#shield"/></svg></div><h3>Whitelisted access</h3><p>Sign in with Firebase, then pass a check against whitelisted_users before entering a workspace.</p></div>
+  </div>
+</section>
+
+<section id="roadmap">
+  <div class="sh"><h2>What’s next.</h2><p>The following features are planned and not yet released.</p></div>
+  <div class="rm">
+    <div class="card glass"><div class="ic"><svg class="i"><use href="#task"/></svg></div><div><h3>Tasks board<span class="soon">planned</span></h3><p>Checkable team lists with strike-through states and a quick-add bottom sheet.</p></div></div>
+    <div class="card glass"><div class="ic"><svg class="i"><use href="#key"/></svg></div><div><h3>Join by hash code<span class="soon">planned</span></h3><p>Generate and validate 8-character invite codes for instant onboarding.</p></div></div>
+    <div class="card glass"><div class="ic"><svg class="i"><use href="#link"/></svg></div><div><h3>Notification deep links<span class="soon">planned</span></h3><p>Open the exact announcement straight from a background push.</p></div></div>
+    <div class="card glass"><div class="ic"><svg class="i"><use href="#spark"/></svg></div><div><h3>Edge AI task parsing<span class="soon">planned</span></h3><p>Type a sentence and HubSpace turns it into a scheduled task or event.</p></div></div>
+  </div>
+</section>
+
+<section>
+  <div class="sh"><h2>Under the hood.</h2></div>
+  <div class="stk"><span>Kotlin</span><span>Jetpack Compose</span><span>Material Design 3</span><span>MVVM + Clean Architecture</span><span>Coroutines &amp; Flow</span><span>Firebase Auth</span><span>Cloud Firestore</span><span>Cloud Messaging</span><span>Gradle</span></div>
+</section>
+</main>
+<footer>HubSpace is in active development. Built with Kotlin and Jetpack Compose.</footer>
+
+<script>
+const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)];
+$('#theme').onclick=()=>{const r=document.documentElement,d=getComputedStyle(r).getPropertyValue('--bg').trim()==='#0a0a22';r.dataset.theme=d?'light':'dark'};
+
+$('#bars').innerHTML=[40,70,30,90,55,80,45,100,65,75,35,85].map((h,i)=>`<i style="height:${h}%;animation-delay:${i*60}ms"></i>`).join('');
+
+let swaps=0;
+$$('#nav button').forEach(b=>b.onclick=()=>{
+  if(b.classList.contains('on'))return;
+  $$('#nav button').forEach(x=>x.classList.toggle('on',x===b));
+  $$('.pane').forEach(p=>p.classList.toggle('on',p.id==='p-'+b.dataset.r));
+  $('#sw').textContent=++swaps;
+});
+const teams=['All teams','Platform','Design'];let ti=0;
+$('#team').onclick=e=>{ti=(ti+1)%teams.length;e.target.textContent=teams[ti]+' ▾';renderFeed()};
+
+const items=[{t:'a',x:'Release freeze starts Friday',s:'Platform'},{t:'e',x:'Sprint review, 4 PM',s:'Platform'},{t:'a',x:'New brand icons are live',s:'Design'},{t:'e',x:'Design critique, Thursday',s:'Design'},{t:'c',x:'Priya merged feed filter chips',s:'Platform'}];
+const lab={a:['Announcement','a'],e:['Event','e'],c:['Activity','a2']};
+let f='all';
+const chipsEl=$('#chips');
+chipsEl.innerHTML=[['all','All'],['a','Announcements'],['e','Events'],['c','Activity']].map(c=>`<button class="chip ${c[0]==='all'?'on':''}" data-f="${c[0]}">${c[1]}</button>`).join('');
+chipsEl.onclick=e=>{const b=e.target.closest('.chip');if(!b)return;f=b.dataset.f;$$('.chip').forEach(c=>c.classList.toggle('on',c===b));renderFeed()};
+function renderFeed(){
+  const team=teams[ti];
+  $('#feed').innerHTML=items.filter(i=>(f==='all'||i.t===f)&&(ti===0||i.s===team)).map((i,k)=>`<div class="fi glass" style="animation-delay:${k*60}ms"><span class="tag ${lab[i.t][1]==='a'?'':lab[i.t][1]}">${lab[i.t][0]}</span><b>${i.x}</b>${i.s}</div>`).join('')||'<div class="fi glass">Nothing here yet. Post an update with the button below.</div>';
+}
+renderFeed();
+const nds=$$('.nd');
+function pick(n){nds.forEach(x=>x.classList.toggle('on',x===n));$('#det').textContent=n.dataset.d}
+nds.forEach(n=>n.onclick=()=>pick(n));pick(nds[0]);
+let ai=0,auto=setInterval(()=>pick(nds[ai=(ai+1)%4]),4500);
+$('#flow').addEventListener('click',()=>clearInterval(auto));
+let busy=false;
+$('#run').onclick=()=>{
+  if(busy)return;busy=true;
+  const A=700,E=1000,T=A+E,ids=['s1','s2','q1','q2'].map(i=>$('#'+i));
+  ids.forEach(e=>{e.style.transition='none';e.style.width='0'});
+  void document.body.offsetWidth;
+  const set=(e,w,ms,delay=0)=>{e.style.transition=`width ${ms}ms linear ${delay}ms`;e.style.width=w};
+  set(ids[0],(A/T*100)+'%',A);set(ids[1],(E/T*100)+'%',E,A);
+  set(ids[2],(A/T*100)+'%',A);set(ids[3],(E/T*100)+'%',E);
+  $('#res').textContent='Running…';
+  setTimeout(()=>{$('#res').textContent=`Sequential: ${T} ms. Parallel: ${E} ms. The feed waits only for the slower call.`;busy=false},T+80);
+};
+</script>
+</body>
+</html>
