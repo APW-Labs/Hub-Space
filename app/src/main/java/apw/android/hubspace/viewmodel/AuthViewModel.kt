@@ -15,7 +15,13 @@ import apw.android.hubspace.backend.HubSpaceRepository
 import apw.android.hubspace.backend.data.FeedItem
 import apw.android.hubspace.backend.data.FeedType
 import apw.android.hubspace.ui.components.AnnouncementItem
+import apw.android.hubspace.ui.components.DaySummaryState
 import apw.android.hubspace.ui.components.EventItem
+import apw.android.hubspace.ui.components.HighlightType
+import apw.android.hubspace.ui.components.SummaryHighlight
+import com.google.firebase.Firebase
+import com.google.firebase.vertexai.FirebaseVertexAI
+import com.google.firebase.vertexai.vertexAI
 import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -52,6 +58,8 @@ class AuthViewModel(
     var feedList by mutableStateOf<List<FeedItem>>(emptyList())
         private set
     var isLoadingFeed by mutableStateOf(false)
+        private set
+    var daySummaryState by mutableStateOf<DaySummaryState>(DaySummaryState.Idle)
         private set
 
     private fun formatTimestamp(timestampObj: Any?): String {
@@ -317,6 +325,58 @@ class AuthViewModel(
                 isLoadingFeed = false
             }
         }
+    }
+
+    fun generateDaySummary(
+        pendingTasksCount: Int,
+        eventTitle: String,
+        announcementTitle: String
+    ) {
+        viewModelScope.launch {
+            daySummaryState = DaySummaryState.Loading
+            try {
+                val model = Firebase.vertexAI.generativeModel("gemini-3.5-flash-lite")
+
+                val prompt = """
+                You are HubSpace AI, a smart team collaboration assistant. 
+                Summarize the user's day in exactly 2 encouraging, professional sentences. 
+                Context:
+                - Team: $userTeam
+                - Pending Tasks: $pendingTasksCount
+                - Upcoming Event: ${if (eventTitle.isNotEmpty()) eventTitle else "None"}
+                - Latest Pinned Announcement: ${if (announcementTitle.isNotEmpty()) announcementTitle else "None"}
+                
+                Keep it action-oriented and engaging for a developer team.
+            """.trimIndent()
+
+                val response = model.generateContent(prompt)
+                val summaryText = response.text?.trim() ?: "You're all caught up for today! Keep pushing."
+
+                val highlights = mutableListOf<SummaryHighlight>()
+                if (pendingTasksCount > 0) {
+                    highlights.add(SummaryHighlight(HighlightType.Tasks, "$pendingTasksCount active in your team's queue"))
+                }
+                if (eventTitle.isNotEmpty()) {
+                    highlights.add(SummaryHighlight(HighlightType.Event, eventTitle))
+                }
+                if (announcementTitle.isNotEmpty()) {
+                    highlights.add(SummaryHighlight(HighlightType.Notice, announcementTitle))
+                }
+
+                daySummaryState = DaySummaryState.Success(
+                    text = summaryText,
+                    highlights = highlights,
+                    generatedAt = "Just now"
+                )
+            } catch (e: Exception) {
+                Log.e("AuthVM", e.toString())
+                daySummaryState = DaySummaryState.Error("We couldn't generate your brief. Check your connection and try again.")
+            }
+        }
+    }
+
+    fun resetSummaryState() {
+        daySummaryState = DaySummaryState.Idle
     }
 
     fun resetState() {

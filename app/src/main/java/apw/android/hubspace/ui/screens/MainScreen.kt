@@ -61,6 +61,14 @@ fun MainScreen(
     val latestEvent = viewModel.latestEvent
     val membersCount = viewModel.memberCount
 
+    LaunchedEffect(latestAnnouncement, latestEvent) {
+        viewModel.generateDaySummary(
+            pendingTasksCount = 4,
+            eventTitle = latestEvent?.title ?: "",
+            announcementTitle = latestAnnouncement?.title ?: ""
+        )
+    }
+
     Scaffold(
         topBar = {
             TopBar(
@@ -171,7 +179,28 @@ fun HomeScreenContent(
                 pendingTasksCount = 4,
                 hasUpcomingEvent = latestEvent != null,
                 eventTitle = latestEvent?.title ?: "",
-                latestAnnouncementTitle = latestAnnouncement?.title ?: ""
+                latestAnnouncementTitle = latestAnnouncement?.title ?: "",
+                summaryState = viewModel.daySummaryState,
+                onSummarizeClick = {
+                    viewModel.generateDaySummary(
+                        pendingTasksCount = 4,
+                        eventTitle = latestEvent?.title ?: "",
+                        announcementTitle = latestAnnouncement?.title ?: ""
+                    )
+                },
+                onRegenerateClick = {
+                    viewModel.generateDaySummary(
+                        pendingTasksCount = 4,
+                        eventTitle = latestEvent?.title ?: "",
+                        announcementTitle = latestAnnouncement?.title ?: ""
+                    )
+                },
+                onDismissClick = {
+                    viewModel.resetSummaryState()
+                },
+                onCancelClick = {
+                    viewModel.resetSummaryState()
+                }
             )
         }
     }
